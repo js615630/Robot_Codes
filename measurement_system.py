@@ -1,3 +1,9 @@
+'''
+This file is to be imported by syp_program_control.py.
+
+Authors: Jason Whitney, Amr Mohamed, Prachya Chowdhury
+'''
+
 import os
 import pyvisa
 import numpy as np
