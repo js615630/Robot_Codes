@@ -128,9 +128,13 @@ class PixelControlSystem:
         max_power = power[max_power_index]
 
         # Find Isc and Voc
-        isc = np.max(current)
-        voc_index = np.where(current >= 0)[0][-1]
+        zero_voltage_index = np.argmin(np.abs(voltage))
+        isc = current[zero_voltage_index]
+        #isc = np.max(current)
+        voc_index = np.argmin(np.abs(current))
         voc = voltage[voc_index]
+        #voc_index = np.where(current >= 0)[0][-1]
+        #voc = voltage[voc_index]
 
         # Calculate efficiency
         efficiency = (max_power / input_power) * 100 if input_power > 0 else 0
