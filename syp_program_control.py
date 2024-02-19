@@ -22,7 +22,7 @@ class PixelControlSystem:
         self.ad.options.speed_penup = 10
         self.ad.update()
 
-        # Define pixel positions
+        # Define pixel positions#hello
         self.pixel_positions = {
             1: [0, 5],
             2: [0, 10],
