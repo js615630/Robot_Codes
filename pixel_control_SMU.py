@@ -137,7 +137,7 @@ class PixelControlSystem:
         #voc = voltage[voc_index]
 
         # Calculate efficiency
-        efficiency = (max_power / input_power) * 100 if input_power > 0 else 0
+        efficiency = (max_power / self.input_power) * 100 if self.input_power > 0 else 0
 
         # Plotting and Saving
         iv_plot_filename = os.path.join(self.save_directory, 'IV_Curve.png')
