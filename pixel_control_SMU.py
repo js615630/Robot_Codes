@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import os
 import time
 import threading
+import pandas as pd
+
 
 class PixelControlSystem:
     def __init__(self):
@@ -126,6 +128,11 @@ class PixelControlSystem:
         max_power_index = np.argmax(power)
         mpp_voltage = voltage[max_power_index]
         max_power = power[max_power_index]
+
+        # Creating DataFrame from 'data_points'
+        data_points_df = pd.DataFrame({'Voltage (V)': voltage, 'Current (A)': current})
+        data_points_excel_filename = os.path.join(self.save_directory, 'Data_Points.xlsx')
+        data_points_df.to_excel(data_points_excel_filename, index=False)
 
         # Find Isc and Voc
         zero_voltage_index = np.argmin(np.abs(voltage))
