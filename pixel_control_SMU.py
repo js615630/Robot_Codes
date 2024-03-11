@@ -110,10 +110,10 @@ class PixelControlSystem:
         smu.write('*WAI')  # set SMU to wait for command
 
         # Fetch the data
-        smu.timeout = 40000  # Timeout in milliseconds, adjust as needed
+        smu.timeout = 20000  # Timeout in milliseconds, adjust as needed
 
         # Adjust the number of data points to be fetched based on the step count
-        data_points_to_fetch = self.step_count 
+        data_points_to_fetch = self.step_count * 2  # Two data points (voltage, current) per step
 
         # Construct the query command with the correct number of data points
         data_query = f'TRAC:DATA? 1, {data_points_to_fetch}, "defbuffer1", SOUR, READ'
