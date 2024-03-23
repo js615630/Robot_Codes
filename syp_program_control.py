@@ -22,6 +22,9 @@ class PixelControlSystem:
         self.ad.options.speed_penup = 10
         self.ad.update()
 
+        # Define the alternative measurement position
+
+        self.position_y = [10, 20]
         # Define pixel positions#hello
         self.pixel_positions = {
             1: [0, 5],
@@ -87,20 +90,39 @@ class PixelControlSystem:
             #self.robot_move_to_pixel(pixel_number, save_directory, input_power)
 
     def full_auto_measurement(self):
-        # Prompt the user for the directory to save the measurements
         save_directory = self.get_save_directory()
         if not save_directory:
             return  # User cancelled or closed the prompt
 
-        # Fetch the measurement settings once
         input_power, start_voltage, stop_voltage, steps = self.get_measurement_settings()
         if any(setting is None for setting in [input_power, start_voltage, stop_voltage, steps]):
             return  # Incomplete measurement settings
 
         for pixel_number in range(1, 9):
-            # Perform measurement for each pixel
+            # Step 1: Perform the baseline measurement at position_y
+            self.perform_measurement_at_position(self.position_y, save_directory, input_power, start_voltage,
+                                                 stop_voltage, steps, "baseline")
+
+            # Step 2: Move to pixel position and perform the measurement
             self.perform_measurement_for_pixel(pixel_number, save_directory, input_power, start_voltage, stop_voltage,
                                                steps)
+
+    def perform_measurement_at_position(self, position, save_directory, input_power, start_voltage, stop_voltage, steps,
+                                        measurement_type):
+        # Similar logic as in `perform_measurement_for_pixel` but for a generic position
+        self.ad.moveto(position[0], position[1])
+        self.ad.delay(2000)  # Wait a bit for the movement to complete
+
+        if not self.measurement_system:
+            print("Measurement system not initialized")
+            return
+
+        # Assuming perform_measurement can accept a 'suffix' or 'measurement_type' to customize saving
+        suffix = f"{measurement_type}_before_pixel"
+        self.measurement_system.perform_measurement(save_directory, input_power, suffix=suffix)
+
+        self.ad.moveto(0, 0)  # Optionally return to "home" position
+        self.ad.delay(1000)
 
     def get_save_directory(self):
         final_directory_name = simpledialog.askstring("Save Directory",
@@ -175,7 +197,7 @@ class PixelControlSystem:
             6: 'u',  # Command for Pixel 6
             7: 'i',  # Command for Pixel 7
             8: 'k'  # Command for Pixel 8
-            # Add additional mappings as needed
+
         }
 
         # Get the command for the given pixel number, default to 'o' if not found

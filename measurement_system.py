@@ -25,10 +25,11 @@ class MeasurementSystem:
         self.smu = self.rm.open_resource(self.instrument_address)
         self.ser = serial.Serial(self.ser_port, self.ser_baud)
 
-    def perform_measurement(self, save_directory, input_power, pixel_number=None):
+    def perform_measurement(self, save_directory, input_power, measurement_identifier=None):
         self.configure_instrument()
         voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency = self.fetch_and_process_data(input_power)
-        self.plot_and_save(voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory, pixel_number)
+        # Use measurement_identifier in plot_and_save method to differentiate between measurements
+        self.plot_and_save(voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory, measurement_identifier)
 
     def configure_instrument(self, start_voltage, stop_voltage, steps):
         self.smu.write('*RST')
@@ -63,15 +64,16 @@ class MeasurementSystem:
         return voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency
 
     def plot_and_save(self, voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory,
-                      pixel_number=None):
+                      measurement_identifier=None):
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
 
-        # Use the pixel number in filenames if provided
-        suffix = f"_pixel{pixel_number}" if pixel_number is not None else ""
+        # Update to use measurement_identifier, which could be a pixel number or 'baseline'
+        suffix = f"_{measurement_identifier}" if measurement_identifier is not None else ""
         iv_plot_filename = os.path.join(save_directory, f'IV_Curve{suffix}.png')
         pv_plot_filename = os.path.join(save_directory, f'PV_Curve{suffix}.png')
         values_filename = os.path.join(save_directory, f'Calculated_Values{suffix}.txt')
+
 
         # Plotting I-V Curve
         plt.figure()
