@@ -25,10 +25,10 @@ class MeasurementSystem:
         self.smu = self.rm.open_resource(self.instrument_address)
         self.ser = serial.Serial(self.ser_port, self.ser_baud)
 
-    def perform_measurement(self, save_directory, input_power):
+    def perform_measurement(self, save_directory, input_power, pixel_number=None):
         self.configure_instrument()
         voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency = self.fetch_and_process_data(input_power)
-        self.plot_and_save(voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory)
+        self.plot_and_save(voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory, pixel_number)
 
     def configure_instrument(self, start_voltage, stop_voltage, steps):
         self.smu.write('*RST')
@@ -62,12 +62,18 @@ class MeasurementSystem:
         efficiency = (max_power / input_power) * 100 if input_power > 0 else 0
         return voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency
 
-    def plot_and_save(self, voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory):
+    def plot_and_save(self, voltage, current, power, mpp_voltage, max_power, isc, voc, efficiency, save_directory,
+                      pixel_number=None):
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
 
-        # Plotting I-V Curve #why
-        iv_plot_filename = os.path.join(save_directory, 'IV_Curve.png')
+        # Use the pixel number in filenames if provided
+        suffix = f"_pixel{pixel_number}" if pixel_number is not None else ""
+        iv_plot_filename = os.path.join(save_directory, f'IV_Curve{suffix}.png')
+        pv_plot_filename = os.path.join(save_directory, f'PV_Curve{suffix}.png')
+        values_filename = os.path.join(save_directory, f'Calculated_Values{suffix}.txt')
+
+        # Plotting I-V Curve
         plt.figure()
         plt.plot(voltage, current, label='I-V Curve')
         plt.xlabel('Voltage (V)')
@@ -75,11 +81,10 @@ class MeasurementSystem:
         plt.title('I-V Characteristics')
         plt.legend()
         plt.grid(True)
-        plt.savefig(iv_plot_filename)
+        plt.savefig(iv_plot_filename)  # Use the correct filename with suffix
         plt.close()
 
         # Plotting P-V Curve
-        pv_plot_filename = os.path.join(save_directory, 'PV_Curve.png')
         plt.figure()
         plt.plot(voltage, power, label='P-V Curve')
         plt.scatter(mpp_voltage, max_power, color='red', label='Max Power Point')  # Marking the MPP point
@@ -88,12 +93,11 @@ class MeasurementSystem:
         plt.title('P-V Characteristics')
         plt.legend()
         plt.grid(True)
-        plt.savefig(pv_plot_filename)
+        plt.savefig(pv_plot_filename)  # Use the correct filename with suffix
         plt.close()
 
         # Saving Calculated Values
-        values_filename = os.path.join(save_directory, 'Calculated_Values.txt')
-        with open(values_filename, 'w') as f:
+        with open(values_filename, 'w') as f:  # Use the correct filename with suffix
             f.write(f'Maximum Power (Pmax): {max_power:.4f} W\n')
             f.write(f'Short Circuit Current (Isc): {isc:.4f} A\n')
             f.write(f'Open Circuit Voltage (Voc): {voc:.4f} V\n')

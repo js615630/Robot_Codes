@@ -54,20 +54,29 @@ class PixelControlSystem:
             "Pixel5": (240, 67),
             "Pixel6": (240, 134),
             "Pixel7": (240, 201),
-            "Pixel8": (240, 268),
-            "PREV": (50, 370),
-            "NEXT": (200, 370),
-            "OFF": (125, 580)
+            "Pixel8": (240, 268)
         }
 
-        # Adding an Abort button
-        abort_button = tk.Button(self.root, text="Abort", command=self.abort_program)
-        abort_button.place(x=appropriate_x, y=appropriate_y, width=button_width, height=button_height)
-
+        # Create pixel buttons based on the defined positions
         for name, position in button_positions.items():
-            pixel_num = int(name[5:]) if name.startswith("Pixel") else name
+            pixel_num = int(name[5:])  # Extract pixel number from the button name
             button = tk.Button(self.root, text=name, command=lambda n=pixel_num: self.pixel_button_click(n))
             button.place(x=position[0], y=position[1], width=50, height=50)
+
+        # Position for the Abort button
+        # Placed beneath the other buttons, with a uniform size
+        abort_button_x = 150  # Centered horizontally, adjust as needed
+        abort_button_y = 335  # Positioned beneath the lowest row of pixel buttons
+
+        # Adding the Abort button
+        abort_button = tk.Button(self.root, text="Abort", command=self.abort_program)
+        abort_button.place(x=abort_button_x, y=abort_button_y, width=50, height=50)
+
+        # Adding Full-Auto button beneath the Abort button, assuming similar dimensions
+        full_auto_button_x = 150  # Keeping it aligned with the Abort button
+        full_auto_button_y = 395  # Placing it below the Abort button
+        full_auto_button = tk.Button(self.root, text="Full-Auto", command=self.full_auto_measurement)
+        full_auto_button.place(x=full_auto_button_x, y=full_auto_button_y, width=50, height=50)
 
     def pixel_button_click(self, pixel_number):
         results = self.get_measurement_inputs()
@@ -77,39 +86,63 @@ class PixelControlSystem:
                 pixel_number, save_directory, input_power, start_voltage, stop_voltage, steps)).start()
             #self.robot_move_to_pixel(pixel_number, save_directory, input_power)
 
-    def get_measurement_inputs(self):
-        # Prompt the user for the name of the directory to save the measurements
+    def full_auto_measurement(self):
+        # Prompt the user for the directory to save the measurements
+        save_directory = self.get_save_directory()
+        if not save_directory:
+            return  # User cancelled or closed the prompt
+
+        # Fetch the measurement settings once
+        input_power, start_voltage, stop_voltage, steps = self.get_measurement_settings()
+        if any(setting is None for setting in [input_power, start_voltage, stop_voltage, steps]):
+            return  # Incomplete measurement settings
+
+        for pixel_number in range(1, 9):
+            # Perform measurement for each pixel
+            self.perform_measurement_for_pixel(pixel_number, save_directory, input_power, start_voltage, stop_voltage,
+                                               steps)
+
+    def get_save_directory(self):
         final_directory_name = simpledialog.askstring("Save Directory",
                                                       "Enter the name of the directory to save the measurements:",
                                                       parent=self.root)
-
-        # If the user cancelled the prompt, return None values
         if not final_directory_name:
-            return None, None
+            return None
 
-        # Define the base directory (update this path as per your requirement)
-        base_directory = 'C:\\Users\\jaybr\\Desktop\\'
-
-        # Combine the base directory with the final directory name
+        base_directory = 'C:\\Users\\jaybr\\Desktop\\'  # Update as necessary
         save_directory = os.path.join(base_directory, final_directory_name)
-        # Create the directory if it doesn't exist
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
-        # Prompt user for input power and convert it to float
+        return save_directory
+
+    def get_measurement_settings(self):
         input_power = simpledialog.askfloat("Input Power", "Enter the input power (in Watts):", parent=self.root)
-        # If the user cancelled the prompt, return None values
-        if input_power is None:
-            return None, None
-         # Prompt user for start voltage, stop voltage, and steps
         start_voltage = simpledialog.askfloat("Start Voltage", "Enter the start voltage:", parent=self.root)
         stop_voltage = simpledialog.askfloat("Stop Voltage", "Enter the stop voltage:", parent=self.root)
         steps = simpledialog.askinteger("Steps", "Enter the number of steps:", parent=self.root)
+        return input_power, start_voltage, stop_voltage, steps
 
-            if start_voltage is None or stop_voltage is None or steps is None:
-                return None, None, None, None, None
+    def perform_measurement_for_pixel(self, pixel_number, save_directory, input_power, start_voltage, stop_voltage,
+                                      steps):
+        # Assuming self.pixel_positions is a dictionary mapping pixel numbers to (x, y) positions
+        position = self.pixel_positions[pixel_number]
 
-            return save_directory, input_power, start_voltage, stop_voltage, steps
+        # Move the AxiDraw to the specified pixel position
+        self.ad.moveto(position[0], position[1])
+        self.ad.delay(2000)  # Wait a bit for the movement to complete
 
+        # Now perform the measurement with the MeasurementSystem instance
+        # Ensure your MeasurementSystem instance is correctly initialized and ready to use
+        if not self.measurement_system:
+            print("Measurement system not initialized")
+            return
+
+        # Execute the measurement, passing the pixel_number to include in the filename
+        self.measurement_system.perform_measurement(save_directory, input_power, pixel_number=pixel_number)
+
+        # After the measurement, optionally return the AxiDraw to a "home" position
+        self.ad.moveto(0, 0)
+        self.ad.delay(1000)
 
     def robot_move_to_pixel(self, pixel_number, save_directory, input_power):
         x_coord, y_coord = self.pixel_positions[pixel_number]
